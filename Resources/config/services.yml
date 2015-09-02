@@ -1,0 +1,10 @@
+parameters:
+    fit_instagram.application.manager.class: Fit\InstagramBundle\Application\Manager
+
+services:
+    fit_instagram.http_client:
+        class: GuzzleHttp\Client
+        public: false
+    fit_instagram.application.manager:
+        class: %fit_instagram.application.manager.class%
+        arguments: ['%fit_instagram.config%', '@fit_instagram.http_client']
