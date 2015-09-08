@@ -37,6 +37,7 @@ class DefaultController extends Controller
                 throw new InvalidConfigurationException(sprintf('No application with name %s found', $application));
             }
         } catch (\Exception $e) {
+            $this->get('logger')->addError(sprintf('%s %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
             return new Response('');
         }
 
