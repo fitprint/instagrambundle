@@ -2,8 +2,10 @@
 
 namespace Fit\InstagramBundle\Controller;
 
+use Fit\SubscriptionBundle\Subscription\Exception\InvalidConfiguration;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -23,11 +25,16 @@ class DefaultController extends Controller
     public function widgetAction(Request $request, $template, $application, $count=10)
     {
         $records = [];
+        $user = null;
 
         try {
             $manager = $this->get('fit_instagram.application.manager');
+
             if ($manager->has($application)) {
+                $user = $manager->getUser($application, true);
                 $records = $manager->getMedia($application, $count);
+            } else {
+                throw new InvalidConfigurationException(sprintf('No application with name %s found', $application));
             }
         } catch (\Exception $e) {
             return new Response('');
@@ -36,6 +43,7 @@ class DefaultController extends Controller
         return $this->render(
             $template,
             array(
+                'user' => $user,
                 'records' => $records,
                 'application' => $application,
             )

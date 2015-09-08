@@ -4,6 +4,7 @@ namespace Fit\InstagramBundle\Application;
 
 use Fit\InstagramBundle\Model\Media;
 use Fit\InstagramBundle\Model\User;
+use Fit\InstagramBundle\Model\UserData;
 use GuzzleHttp\ClientInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -15,6 +16,7 @@ class Manager
     protected $applications;
 
     protected $url_user = 'https://api.instagram.com/v1/users/search?q=%s&client_id=%s';
+    protected $url_user_data = 'https://api.instagram.com/v1/users/%d/?client_id=%s';
     protected $url_media = 'https://api.instagram.com/v1/users/%s/media/recent/?client_id=%s&count=%d';
 
     /**
@@ -22,6 +24,7 @@ class Manager
      */
     protected $client;
     protected $users = [];
+    protected $usersData = [];
 
     /**
      * @param array $config Configuration array
@@ -50,11 +53,14 @@ class Manager
      * @param $application
      * @return User
      */
-    public function getUser($application)
+    public function getUser($application, $fetchCounters=false)
     {
         // from cache
         if (isset($this->users[$application])) {
-            return $this->users[$application];
+            $result = $this->users[$application];
+            if ($fetchCounters==false || $result->getCounters()) {
+                return $this->users[$application];
+            }
         }
 
         $response = $this->client->get(sprintf($this->url_user,  $application, $this->getClientId($application)));
@@ -62,6 +68,13 @@ class Manager
         if ($response->getStatusCode()==200) {
             $user = User::fromResponse($response->json());
             if ($user->getUsername() == $application) {
+                if ($fetchCounters==true) {
+                    $response = $this->client->get(sprintf($this->url_user_data,  $user->getId(), $this->getClientId($application)));
+                    if ($response->getStatusCode()==200) {
+                        $user->setCountersFromResponse($response->json());
+                    }
+                }
+
                 $this->users[$application] = $user;
                 return $this->users[$application];
             }
